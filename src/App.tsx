@@ -1,36 +1,80 @@
 import React, { useState, useEffect } from 'react';
-import { PlayCircle, FileText, MessageSquare, Trophy, Flame, ChevronRight, LayoutDashboard, CheckCircle2, Award } from 'lucide-react';
+import { PlayCircle, FileText, MessageSquare, Trophy, Flame, ChevronRight, LayoutDashboard, CheckCircle2, Award, Zap, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import RegistrationScreen from './components/RegistrationScreen';
 import LessonsScreen from './components/LessonsScreen';
 import PDFsScreen from './components/PDFsScreen';
 import MentorChat from './components/MentorChat';
+import RewardsScreen, { Badge } from './components/RewardsScreen';
 import { UserData } from './types';
-import { cn } from './lib/utils';
+import { cn, safeJsonStringify } from './lib/utils';
+
+type Screen = 'lessons' | 'pdfs' | 'mentor' | 'rewards';
+
+const tituloSecaoPDFs = "Material GUIA Premium";
 
 export default function App() {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [isRegistered, setIsRegistered] = useState(false);
-  const [activeScreen, setActiveScreen] = useState<'lessons' | 'pdfs' | 'mentor'>('lessons');
+  const [activeScreen, setActiveScreen] = useState<Screen>('lessons');
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
+  const [downloadedPdfs, setDownloadedPdfs] = useState<string[]>([]);
+  const [mentorMessagesCount, setMentorMessagesCount] = useState(0);
+  const [points, setPoints] = useState(0);
+  const [earnedBadges, setEarnedBadges] = useState<string[]>([]);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('sanduiche_user');
     const progress = localStorage.getItem('sanduiche_progress');
+    const pdfs = localStorage.getItem('sanduiche_pdfs');
+    const mentor = localStorage.getItem('sanduiche_mentor');
+    const savedPoints = localStorage.getItem('sanduiche_points');
+    const savedBadges = localStorage.getItem('sanduiche_earned_badges');
     
     if (savedUser) {
       setUserData(JSON.parse(savedUser));
       setIsRegistered(true);
     }
-    if (progress) {
-      setCompletedLessons(JSON.parse(progress));
-    }
+    if (progress) setCompletedLessons(JSON.parse(progress));
+    if (pdfs) setDownloadedPdfs(JSON.parse(pdfs));
+    if (mentor) setMentorMessagesCount(parseInt(mentor));
+    if (savedPoints) setPoints(parseInt(savedPoints));
+    if (savedBadges) setEarnedBadges(JSON.parse(savedBadges));
   }, []);
+
+  const saveGamification = (newPoints: number, newBadges: string[]) => {
+    setPoints(newPoints);
+    setEarnedBadges(newBadges);
+    localStorage.setItem('sanduiche_points', newPoints.toString());
+    localStorage.setItem('sanduiche_earned_badges', safeJsonStringify(newBadges));
+  };
+
+  const checkBadges = (currentPoints: number, lessons: string[], pdfs: string[], messages: number) => {
+    const newBadges = [...earnedBadges];
+    let changed = false;
+
+    const addBadge = (id: string) => {
+      if (!newBadges.includes(id)) {
+        newBadges.push(id);
+        changed = true;
+      }
+    };
+
+    if (lessons.length >= 1) addBadge('primeiro_passo');
+    if (lessons.length >= 5) addBadge('especialista');
+    if (pdfs.length >= 5) addBadge('mestre_teoria');
+    if (messages >= 5) addBadge('aprendiz_curioso');
+    if (currentPoints >= 1000) addBadge('lucro_maximo');
+
+    if (changed) {
+      saveGamification(currentPoints, newBadges);
+    }
+  };
 
   const handleRegistration = (data: UserData) => {
     setUserData(data);
     setIsRegistered(true);
-    localStorage.setItem('sanduiche_user', JSON.stringify(data));
+    localStorage.setItem('sanduiche_user', safeJsonStringify(data));
     setActiveScreen('lessons');
   };
 
@@ -38,9 +82,46 @@ export default function App() {
     if (!completedLessons.includes(lessonId)) {
       const updated = [...completedLessons, lessonId];
       setCompletedLessons(updated);
-      localStorage.setItem('sanduiche_progress', JSON.stringify(updated));
+      localStorage.setItem('sanduiche_progress', safeJsonStringify(updated));
+      
+      const newPoints = points + 100;
+      setPoints(newPoints);
+      localStorage.setItem('sanduiche_points', newPoints.toString());
+      checkBadges(newPoints, updated, downloadedPdfs, mentorMessagesCount);
     }
   };
+
+  const handlePdfDownload = (pdfId: string) => {
+    if (!downloadedPdfs.includes(pdfId)) {
+      const updated = [...downloadedPdfs, pdfId];
+      setDownloadedPdfs(updated);
+      localStorage.setItem('sanduiche_pdfs', safeJsonStringify(updated));
+      
+      const newPoints = points + 50;
+      setPoints(newPoints);
+      localStorage.setItem('sanduiche_points', newPoints.toString());
+      checkBadges(newPoints, completedLessons, updated, mentorMessagesCount);
+    }
+  };
+
+  const handleMentorEngagement = () => {
+    const updatedCount = mentorMessagesCount + 1;
+    setMentorMessagesCount(updatedCount);
+    localStorage.setItem('sanduiche_mentor', updatedCount.toString());
+    
+    const newPoints = points + 10;
+    setPoints(newPoints);
+    localStorage.setItem('sanduiche_points', newPoints.toString());
+    checkBadges(newPoints, completedLessons, downloadedPdfs, updatedCount);
+  };
+
+  const badges: Badge[] = [
+    { id: 'primeiro_passo', title: 'Primeiro Passo', description: 'Concluiu sua primeira aula estratégica.', icon: <Zap className="w-8 h-8" />, color: 'bg-blue-500', isEarned: earnedBadges.includes('primeiro_passo') },
+    { id: 'mestre_teoria', title: 'Mestre da Teoria', description: 'Baixou todos os 5 manuais de operação.', icon: <FileText className="w-8 h-8" />, color: 'bg-purple-500', isEarned: earnedBadges.includes('mestre_teoria') },
+    { id: 'aprendiz_curioso', title: 'Aprendiz Curioso', description: 'Enviou 5 mensagens para o Mentor IA.', icon: <MessageSquare className="w-8 h-8" />, color: 'bg-orange-500', isEarned: earnedBadges.includes('aprendiz_curioso') },
+    { id: 'especialista', title: 'Especialista', description: 'Concluiu todas as 5 aulas do treinamento.', icon: <Award className="w-8 h-8" />, color: 'bg-green-500', isEarned: earnedBadges.includes('especialista') },
+    { id: 'lucro_maximo', title: 'Lucro Máximo', description: 'Alcançou a marca histórica de 1000 pontos.', icon: <Trophy className="w-8 h-8" />, color: 'bg-yellow-500', isEarned: earnedBadges.includes('lucro_maximo') },
+  ];
 
   const progressPercentage = Math.round((completedLessons.length / 5) * 100);
   const isCertified = completedLessons.length === 5;
@@ -108,9 +189,9 @@ export default function App() {
                   active={activeScreen === 'pdfs'} 
                   onClick={() => setActiveScreen('pdfs')}
                   icon={<FileText className="w-5 h-5" />}
-                  label="Ferramentas Prontas"
+                  label={tituloSecaoPDFs}
                   subLabel="5 PDFs de Operação"
-                  badge="Download"
+                  badge={`${downloadedPdfs.length}/5`}
                 />
                 <NavButton 
                   active={activeScreen === 'mentor'} 
@@ -119,6 +200,14 @@ export default function App() {
                   label="Consultor de Lucro"
                   subLabel="Inteligência Artificial"
                   badge="Online"
+                />
+                <NavButton 
+                  active={activeScreen === 'rewards'} 
+                  onClick={() => setActiveScreen('rewards')}
+                  icon={<Zap className="w-5 h-5" />}
+                  label="Suas Conquistas"
+                  subLabel="Pontos e Medalhas"
+                  badge={`${points} pts`}
                 />
               </nav>
 
@@ -150,15 +239,14 @@ export default function App() {
                       Sanduíche <span className="text-green-600">Natural</span>
                     </h1>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1 bg-slate-100 px-2 py-1 rounded-full">
+                      <Zap className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+                      <span className="text-[10px] font-black">{points}</span>
+                    </div>
                     <div className="w-7 h-7 bg-gradient-to-br from-slate-700 to-slate-600 rounded-full flex items-center justify-center text-white font-bold text-[10px]">
                       {userData?.name.charAt(0).toUpperCase()}
                     </div>
-                    {isCertified && (
-                      <div className="w-6 h-6 bg-yellow-100 rounded-full flex items-center justify-center">
-                        <Award className="w-3.5 h-3.5 text-yellow-600" />
-                      </div>
-                    )}
                   </div>
                 </div>
                 
@@ -195,8 +283,24 @@ export default function App() {
                       onComplete={handleLessonComplete} 
                     />
                   )}
-                  {activeScreen === 'pdfs' && <PDFsScreen />}
-                  {activeScreen === 'mentor' && <MentorChat userData={userData} />}
+                  {activeScreen === 'pdfs' && (
+                    <PDFsScreen 
+                      downloadedItems={downloadedPdfs}
+                      onDownload={handlePdfDownload}
+                    />
+                  )}
+                  {activeScreen === 'mentor' && (
+                    <MentorChat 
+                      userData={userData} 
+                      onMessageSent={handleMentorEngagement}
+                    />
+                  )}
+                  {activeScreen === 'rewards' && (
+                    <RewardsScreen 
+                      points={points}
+                      badges={badges}
+                    />
+                  )}
                 </motion.div>
               </AnimatePresence>
             </div>
@@ -214,13 +318,19 @@ export default function App() {
                   active={activeScreen === 'pdfs'} 
                   onClick={() => setActiveScreen('pdfs')}
                   icon={<FileText className="w-5 h-5" />}
-                  label="PDFs"
+                  label="GUIA"
                 />
                 <MobileNavButton 
                   active={activeScreen === 'mentor'} 
                   onClick={() => setActiveScreen('mentor')}
                   icon={<MessageSquare className="w-5 h-5" />}
                   label="IA"
+                />
+                <MobileNavButton 
+                  active={activeScreen === 'rewards'} 
+                  onClick={() => setActiveScreen('rewards')}
+                  icon={<Zap className="w-5 h-5" />}
+                  label="Conquistas"
                 />
               </div>
             </nav>

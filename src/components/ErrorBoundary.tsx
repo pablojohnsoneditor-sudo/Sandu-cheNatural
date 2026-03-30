@@ -1,4 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { safeJsonStringify } from '../lib/utils';
 
 interface Props {
   children: ReactNode;
@@ -19,7 +20,8 @@ export default class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Uncaught error:', error, errorInfo);
+    // Logamos como string segura para evitar erros de estrutura circular no console/logs
+    console.error('Uncaught error (safe):', safeJsonStringify({ error: error.message, stack: error.stack, errorInfo }));
   }
 
   public render() {

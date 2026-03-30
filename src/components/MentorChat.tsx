@@ -13,6 +13,7 @@ interface Message {
 
 interface MentorChatProps {
   userData: UserData | null;
+  onMessageSent?: () => void;
 }
 
 const SUGGESTIONS = [
@@ -22,7 +23,7 @@ const SUGGESTIONS = [
   { icon: <Sparkles className="w-4 h-4" />, text: "Dica de fidelização" }
 ];
 
-export default function MentorChat({ userData }: MentorChatProps) {
+export default function MentorChat({ userData, onMessageSent }: MentorChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -31,17 +32,17 @@ export default function MentorChat({ userData }: MentorChatProps) {
   useEffect(() => {
     if (userData && messages.length === 0) {
       const goal = parseInt(userData.incomeGoal);
-      const unitsPerMonth = Math.ceil(goal / 12); // R$ 12 de lucro médio por sanduíche
-      const unitsPerDay = Math.ceil(unitsPerMonth / 22); // 22 dias úteis
+      const unitsPerMonth = Math.ceil(goal / 12);
+      const unitsPerDay = Math.ceil(unitsPerMonth / 22);
 
       const welcomeMessage = `Olá, **${userData.name}**! Sou seu **Contador IA** estratégico. 🚀
 
-Para atingir sua meta de **R$ ${userData.incomeGoal}** de lucro mensal em **${userData.location}**, nosso plano de ataque é:
+Para atingir sua meta de **R$ ${userData.incomeGoal}** de lucro mensal em **${userData.location}**, nosso plano é:
 
-1. **Vendas Mensais**: Precisamos de aproximadamente **${unitsPerMonth} sanduíches** vendidos.
-2. **Ritmo Diário**: Foco em **${unitsPerDay} unidades/dia** (considerando 22 dias).
+1. **Vendas Mensais**: ~**${unitsPerMonth} sanduíches**.
+2. **Ritmo Diário**: **${unitsPerDay} unidades/dia**.
 
-Como posso te ajudar a bater essa meta hoje? Quer calcular seu markup ou analisar seus custos?`;
+Como posso te ajudar a lucrar mais hoje?`;
 
       setMessages([{ role: 'model', text: welcomeMessage }]);
     }
@@ -49,9 +50,12 @@ Como posso te ajudar a bater essa meta hoje? Quer calcular seu markup ou analisa
 
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
     }
-  }, [messages]);
+  }, [messages, isLoading]);
 
   const handleSend = async (text: string = input) => {
     if (!text.trim() || isLoading) return;
@@ -61,13 +65,15 @@ Como posso te ajudar a bater essa meta hoje? Quer calcular seu markup ou analisa
     setInput('');
     setIsLoading(true);
 
+    if (onMessageSent) onMessageSent();
+
     try {
       const response = await sendMessage(text);
       setMessages(prev => [...prev, { role: 'model', text: response }]);
     } catch (error) {
       setMessages(prev => [...prev, { 
         role: 'model', 
-        text: "Desculpe, tive um problema técnico. Pode repetir a pergunta? Estou focado no seu lucro!" 
+        text: "Desculpe, tive um problema técnico. Pode repetir a pergunta?" 
       }]);
     } finally {
       setIsLoading(false);
@@ -75,31 +81,30 @@ Como posso te ajudar a bater essa meta hoje? Quer calcular seu markup ou analisa
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-120px)] md:h-[calc(100vh-40px)] max-w-4xl mx-auto px-4 py-4">
-      {/* Header */}
-      <div className="bg-white rounded-3xl p-4 border border-slate-100 shadow-sm mb-4 flex items-center justify-between">
+    <div className="flex flex-col fixed inset-0 z-30 bg-white md:relative md:h-[calc(100vh-40px)] md:inset-auto md:bg-transparent overflow-hidden pt-[57px] pb-[72px] md:pt-0 md:pb-0">
+      {/* HEADER FIXO */}
+      <header className="flex-shrink-0 bg-white border-b border-slate-100 p-4 flex items-center justify-between z-10">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-green-600 to-green-400 rounded-xl flex items-center justify-center shadow-lg shadow-green-100">
-            <Bot className="text-white w-6 h-6" />
+          <div className="w-10 h-10 bg-slate-900 rounded-2xl flex items-center justify-center shadow-lg">
+            <Bot className="text-white w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-black text-sm tracking-tight leading-none mb-1">Contador IA</h3>
+            <h3 className="font-black text-sm tracking-tight leading-none mb-1">Assistente IA</h3>
             <div className="flex items-center gap-1.5">
               <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Consultoria de Lucro</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Online agora</span>
             </div>
           </div>
         </div>
-        <div className="hidden md:flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
-          <Flame className="w-3.5 h-3.5 text-orange-500" />
-          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Foco em Resultado</span>
+        <div className="bg-green-50 px-3 py-1.5 rounded-full border border-green-100">
+          <Flame className="w-3.5 h-3.5 text-green-600" />
         </div>
-      </div>
+      </header>
 
-      {/* Chat Area */}
+      {/* ÁREA DE MENSAGENS (SCROLLÁVEL) */}
       <div 
         ref={scrollRef}
-        className="flex-1 overflow-y-auto space-y-6 pr-2 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent mb-4"
+        className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50/50 scroll-smooth"
       >
         <AnimatePresence initial={false}>
           {messages.map((msg, i) => (
@@ -108,23 +113,20 @@ Como posso te ajudar a bater essa meta hoje? Quer calcular seu markup ou analisa
               initial={{ opacity: 0, y: 10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               className={cn(
-                "flex items-start gap-4",
-                msg.role === 'user' ? "flex-row-reverse" : "flex-row"
+                "flex w-full",
+                msg.role === 'user' ? "justify-end" : "justify-start"
               )}
             >
               <div className={cn(
-                "w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm",
-                msg.role === 'user' ? "bg-slate-900 text-white" : "bg-green-600 text-white"
-              )}>
-                {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
-              </div>
-              <div className={cn(
-                "max-w-[85%] rounded-3xl p-4 text-sm md:text-base leading-relaxed shadow-sm border",
+                "max-w-[85%] md:max-w-[70%] p-4 shadow-sm text-sm md:text-base leading-relaxed",
                 msg.role === 'user' 
-                  ? "bg-white border-slate-100 text-slate-900 rounded-tr-none" 
-                  : "bg-green-50/50 border-green-100 text-slate-900 rounded-tl-none"
+                  ? "bg-slate-900 text-white rounded-2xl rounded-tr-none" 
+                  : "bg-white border border-slate-100 text-slate-900 rounded-2xl rounded-tl-none"
               )}>
-                <div className="prose prose-slate prose-sm max-w-none prose-p:leading-relaxed prose-strong:text-green-700 prose-strong:font-black">
+                <div className={cn(
+                  "prose prose-sm max-w-none",
+                  msg.role === 'user' ? "prose-invert" : "prose-slate"
+                )}>
                   <ReactMarkdown>{msg.text}</ReactMarkdown>
                 </div>
               </div>
@@ -136,27 +138,27 @@ Como posso te ajudar a bater essa meta hoje? Quer calcular seu markup ou analisa
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex items-center gap-3 text-slate-400"
+            className="flex items-center gap-2 text-slate-400"
           >
-            <div className="w-8 h-8 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100">
-              <Loader2 className="w-4 h-4 animate-spin" />
+            <div className="bg-white border border-slate-100 p-2 rounded-xl shadow-sm">
+              <Loader2 className="w-4 h-4 animate-spin text-green-600" />
             </div>
-            <span className="text-xs font-black uppercase tracking-widest animate-pulse">Calculando Lucro...</span>
+            <span className="text-[10px] font-black uppercase tracking-widest animate-pulse">IA está escrevendo...</span>
           </motion.div>
         )}
       </div>
 
-      {/* Input Area */}
-      <div className="space-y-4">
-        {/* Suggestion Chips */}
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none no-scrollbar">
+      {/* INPUT FIXO NO BOTTOM */}
+      <footer className="flex-shrink-0 p-4 bg-white border-t border-slate-100 space-y-4 sticky bottom-0">
+        {/* Sugestões Rápidas */}
+        <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
           {SUGGESTIONS.map((s, i) => (
             <button
               key={i}
               onClick={() => handleSend(s.text)}
-              className="flex items-center gap-2 bg-white border border-slate-100 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:border-green-500 hover:text-green-600 hover:bg-green-50 transition-all whitespace-nowrap shadow-sm active:scale-95"
+              className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-green-50 hover:border-green-200 hover:text-green-600 transition-all whitespace-nowrap active:scale-95"
             >
-              <span className="text-green-600">{s.icon}</span>
+              {s.icon}
               {s.text}
             </button>
           ))}
@@ -164,27 +166,24 @@ Como posso te ajudar a bater essa meta hoje? Quer calcular seu markup ou analisa
 
         <form 
           onSubmit={(e) => { e.preventDefault(); handleSend(); }}
-          className="relative group"
+          className="relative flex items-center gap-2"
         >
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Pergunte sobre custos, markup ou vendas..."
-            className="w-full bg-white border-2 border-slate-100 rounded-[2rem] px-6 py-5 pr-16 text-sm font-bold focus:outline-none focus:border-green-500 transition-all shadow-xl shadow-slate-200/50 placeholder:text-slate-300"
+            placeholder="Digite sua mensagem..."
+            className="flex-1 bg-slate-50 border-2 border-slate-100 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none focus:border-slate-900 transition-all placeholder:text-slate-300"
           />
           <button
             type="submit"
             disabled={!input.trim() || isLoading}
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-12 h-12 bg-slate-900 text-white rounded-full flex items-center justify-center hover:bg-green-600 transition-all shadow-lg disabled:opacity-30 disabled:hover:bg-slate-900 active:scale-90"
+            className="w-14 h-14 bg-slate-900 text-white rounded-2xl flex items-center justify-center hover:bg-green-600 transition-all shadow-lg disabled:opacity-20 active:scale-90 flex-shrink-0"
           >
             <Send className="w-5 h-5" />
           </button>
         </form>
-        <p className="text-[9px] font-bold text-slate-300 text-center uppercase tracking-[0.2em]">
-          Contador IA · Especialista em Lucro Real
-        </p>
-      </div>
+      </footer>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { AgentType } from "../types";
+import { safeJsonStringify } from "../lib/utils";
 
 const FINANCE_SYSTEM_INSTRUCTION = `
 # 🧠 PROMPT MESTRE: CONTADOR IA — SANDUÍCHES NATURAIS
@@ -128,7 +129,7 @@ export async function sendMessage(message: string, _agent: AgentType = "finance"
 
     return text;
   } catch (error) {
-    console.error("Gemini API error:", error);
+    console.error("Gemini API error (safe):", safeJsonStringify(error));
     return "⚠️ Erro no cálculo. Tente novamente.";
   }
 }
