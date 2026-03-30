@@ -17,7 +17,7 @@ export default function App() {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [isRegistered, setIsRegistered] = useState(false);
   const [activeScreen, setActiveScreen] = useState<Screen>('lessons');
-  const [completedLessons, setCompletedLessons] = useState<string[]>([]);
+  const [completedLessons, setCompletedLessons] = useState<number[]>([]);
   const [downloadedPdfs, setDownloadedPdfs] = useState<string[]>([]);
   const [mentorMessagesCount, setMentorMessagesCount] = useState(0);
   const [points, setPoints] = useState(0);
@@ -49,7 +49,7 @@ export default function App() {
     localStorage.setItem('sanduiche_earned_badges', safeJsonStringify(newBadges));
   };
 
-  const checkBadges = (currentPoints: number, lessons: string[], pdfs: string[], messages: number) => {
+  const checkBadges = (currentPoints: number, lessons: number[], pdfs: string[], messages: number) => {
     const newBadges = [...earnedBadges];
     let changed = false;
 
@@ -78,7 +78,7 @@ export default function App() {
     setActiveScreen('lessons');
   };
 
-  const handleLessonComplete = (lessonId: string) => {
+  const handleLessonComplete = (lessonId: number) => {
     if (!completedLessons.includes(lessonId)) {
       const updated = [...completedLessons, lessonId];
       setCompletedLessons(updated);

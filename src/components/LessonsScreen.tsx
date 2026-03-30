@@ -3,61 +3,61 @@ import { Play, CheckCircle2, Lock, Trophy, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 
-// FALLBACK PADRÃO PARA THUMBNAILS AUSENTES (Imagem de alta qualidade com tema de café/comida)
-const FALLBACK_THUMBNAIL = 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?q=80&w=800&auto=format&fit=crop';
+// IMAGEM PADRÃO PARA TODAS AS AULAS
+const THUMBNAIL_PADRAO = 'https://gkaoozgpeeeympskbcxq.supabase.co/storage/v1/object/public/IMGs/THUMB.png';
 
 // ESTRUTURA CENTRAL DE DADOS (AULAS)
 // Cada objeto segue rigorosamente: { id, titulo, videoUrl, thumbnail }
-const AULAS = [
+const aulas = [
   {
-    id: '1',
+    id: 1,
     titulo: 'Higiene e Segurança Alimentar',
     videoUrl: '69c9f73f9ece9c59e26cbabb',
-    thumbnail: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=800&auto=format&fit=crop',
+    thumbnail: THUMBNAIL_PADRAO,
     duracao: '12:45',
     categoria: 'Fundamentos'
   },
   {
-    id: '2',
+    id: 2,
     titulo: 'Produção em Escala e Montagem',
     videoUrl: '69c9f73f9ece9c59e26cbabb', 
-    thumbnail: 'https://images.unsplash.com/photo-1621852004158-f3bc188caa21?q=80&w=800&auto=format&fit=crop',
+    thumbnail: THUMBNAIL_PADRAO,
     duracao: '18:20',
     categoria: 'Operação'
   },
   {
-    id: '3',
+    id: 3,
     titulo: 'Precificação e Markup Lucrativo',
     videoUrl: '', 
-    thumbnail: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?q=80&w=800&auto=format&fit=crop',
+    thumbnail: THUMBNAIL_PADRAO,
     duracao: '15:10',
     categoria: 'Finanças'
   },
   {
-    id: '4',
+    id: 4,
     titulo: 'Tráfego Pago para Delivery',
     videoUrl: '', 
-    thumbnail: 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?q=80&w=800&auto=format&fit=crop',
+    thumbnail: THUMBNAIL_PADRAO,
     duracao: '22:30',
     categoria: 'Marketing'
   },
   {
-    id: '5',
+    id: 5,
     titulo: 'Vendas e Script de Fidelização',
     videoUrl: '', 
-    thumbnail: 'https://images.unsplash.com/photo-1556740734-7f96267b118a?q=80&w=800&auto=format&fit=crop',
+    thumbnail: THUMBNAIL_PADRAO,
     duracao: '14:55',
     categoria: 'Vendas'
   }
 ];
 
 interface LessonsScreenProps {
-  completedLessons: string[];
-  onComplete: (id: string) => void;
+  completedLessons: number[];
+  onComplete: (id: number) => void;
 }
 
 export default function LessonsScreen({ completedLessons, onComplete }: LessonsScreenProps) {
-  const [selectedLesson, setSelectedLesson] = useState(AULAS[0]);
+  const [selectedLesson, setSelectedLesson] = useState(aulas[0]);
   const [isPlaying, setIsPlaying] = useState(false);
 
   // FUNÇÃO PARA GERAR O TÍTULO FORMATADO DINAMICAMENTE
@@ -66,26 +66,21 @@ export default function LessonsScreen({ completedLessons, onComplete }: LessonsS
     return `Aula ${lessonNumber}: ${titulo}`;
   };
 
-  // FUNÇÃO SEGURA PARA OBTER THUMBNAIL COM FALLBACK
-  const getLessonThumbnail = (url?: string) => {
-    return url && url.trim() !== '' ? url : FALLBACK_THUMBNAIL;
-  };
-
   const getEmbedUrl = (videoId: string) => {
     if (!videoId) return '';
     return `https://scripts.converteai.net/936a89ee-2ce4-4007-a60f-9d25da087ec8/players/${videoId}/embed.html`;
   };
 
-  const isCompleted = (id: string) => completedLessons.includes(id);
-  const isUnlocked = (index: number) => index === 0 || isCompleted(AULAS[index - 1].id);
+  const isCompleted = (id: number) => completedLessons.includes(id);
+  const isUnlocked = (index: number) => index === 0 || isCompleted(aulas[index - 1].id);
 
-  const handlePlay = (lesson: typeof AULAS[0]) => {
+  const handlePlay = (lesson: typeof aulas[0]) => {
     setSelectedLesson(lesson);
     setIsPlaying(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const progressPercentage = Math.round((completedLessons.length / AULAS.length) * 100);
+  const progressPercentage = Math.round((completedLessons.length / aulas.length) * 100);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -108,7 +103,7 @@ export default function LessonsScreen({ completedLessons, onComplete }: LessonsS
                     className="absolute top-0 left-0 w-full h-full border-none"
                     allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
-                    title={formatLessonTitle(AULAS.findIndex(a => a.id === selectedLesson.id), selectedLesson.titulo)}
+                    title={formatLessonTitle(aulas.findIndex(a => a.id === selectedLesson.id), selectedLesson.titulo)}
                   />
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full text-slate-500">
@@ -121,7 +116,7 @@ export default function LessonsScreen({ completedLessons, onComplete }: LessonsS
               <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
                 <div className="min-w-0">
                   <h2 className="font-black text-slate-900 text-sm truncate">
-                    {formatLessonTitle(AULAS.findIndex(a => a.id === selectedLesson.id), selectedLesson.titulo)}
+                    {formatLessonTitle(aulas.findIndex(a => a.id === selectedLesson.id), selectedLesson.titulo)}
                   </h2>
                   <p className="text-[10px] text-slate-500 uppercase font-bold tracking-wider">Módulo: {selectedLesson.categoria}</p>
                 </div>
@@ -163,7 +158,7 @@ export default function LessonsScreen({ completedLessons, onComplete }: LessonsS
         {/* LISTA DE AULAS */}
         <div className="space-y-4">
           <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] px-1">Cronograma Estratégico</h3>
-          {AULAS.map((aula, index) => {
+          {aulas.map((aula, index) => {
             const completed = isCompleted(aula.id);
             const locked = !isUnlocked(index);
             const active = selectedLesson.id === aula.id && isPlaying;
@@ -181,9 +176,9 @@ export default function LessonsScreen({ completedLessons, onComplete }: LessonsS
               >
                 <div className="relative w-20 h-20 md:w-24 md:h-24 rounded-xl overflow-hidden flex-shrink-0 bg-slate-200">
                   <img 
-                    src={getLessonThumbnail(aula.thumbnail)} 
+                    src={aula.thumbnail} 
                     alt={aula.titulo} 
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover rounded-xl"
                     loading="lazy"
                     referrerPolicy="no-referrer"
                   />
