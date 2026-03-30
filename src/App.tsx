@@ -1,26 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { PlayCircle, FileText, MessageSquare, User, Menu, X, TrendingUp, Target } from 'lucide-react';
+import { PlayCircle, FileText, MessageSquare, Trophy, Flame, ChevronRight, LayoutDashboard, CheckCircle2, Award } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import RegistrationScreen from './components/RegistrationScreen';
 import LessonsScreen from './components/LessonsScreen';
 import PDFsScreen from './components/PDFsScreen';
 import MentorChat from './components/MentorChat';
-import RegistrationScreen from './components/RegistrationScreen';
-import { cn } from './lib/utils';
 import { UserData } from './types';
-
-type Screen = 'lessons' | 'pdfs' | 'mentor';
+import { cn } from './lib/utils';
 
 export default function App() {
-  const [activeScreen, setActiveScreen] = useState<Screen>('lessons');
   const [userData, setUserData] = useState<UserData | null>(null);
   const [isRegistered, setIsRegistered] = useState(false);
+  const [activeScreen, setActiveScreen] = useState<'lessons' | 'pdfs' | 'mentor'>('lessons');
+  const [completedLessons, setCompletedLessons] = useState<string[]>([]);
 
-  // Load from local storage if exists
   useEffect(() => {
-    const saved = localStorage.getItem('sanduiche_user');
-    if (saved) {
-      setUserData(JSON.parse(saved));
+    const savedUser = localStorage.getItem('sanduiche_user');
+    const progress = localStorage.getItem('sanduiche_progress');
+    
+    if (savedUser) {
+      setUserData(JSON.parse(savedUser));
       setIsRegistered(true);
+    }
+    if (progress) {
+      setCompletedLessons(JSON.parse(progress));
     }
   }, []);
 
@@ -28,154 +31,249 @@ export default function App() {
     setUserData(data);
     setIsRegistered(true);
     localStorage.setItem('sanduiche_user', JSON.stringify(data));
-    setActiveScreen('mentor'); // Go to chat to "validate" profile
+    setActiveScreen('lessons');
   };
 
-  if (!isRegistered) {
-    return <RegistrationScreen onComplete={handleRegistration} />;
-  }
-
-  const renderScreen = () => {
-    switch (activeScreen) {
-      case 'lessons': return <LessonsScreen />;
-      case 'pdfs': return <PDFsScreen />;
-      case 'mentor': return <MentorChat userData={userData} />;
-      default: return <LessonsScreen />;
+  const handleLessonComplete = (lessonId: string) => {
+    if (!completedLessons.includes(lessonId)) {
+      const updated = [...completedLessons, lessonId];
+      setCompletedLessons(updated);
+      localStorage.setItem('sanduiche_progress', JSON.stringify(updated));
     }
   };
 
+  const progressPercentage = Math.round((completedLessons.length / 5) * 100);
+  const isCertified = completedLessons.length === 5;
+
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-green-100 selection:text-green-900">
-      {/* Desktop Sidebar (Hidden on Mobile) */}
-      <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-64 bg-white border-r border-slate-100 flex-col p-6 z-50">
-        <div className="flex items-center gap-3 mb-10">
-          <div className="w-10 h-10 bg-green-600 rounded-xl flex items-center justify-center shadow-lg shadow-green-200">
-            <Target className="text-white w-6 h-6" />
-          </div>
-          <h1 className="font-black text-xl tracking-tighter leading-none">
-            SANDUÍCHE<br/><span className="text-green-600">NATURAL</span>
-          </h1>
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-900 selection:bg-green-100 selection:text-green-900 overflow-x-hidden">
+      {!isRegistered ? (
+        <div className="flex-1 flex flex-col">
+          <RegistrationScreen onComplete={handleRegistration} />
         </div>
+      ) : (
+        <>
+          {/* Sidebar Desktop - APENAS DESKTOP */}
+          <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-64 bg-white border-r border-slate-100 flex-col p-6 z-50">
+            <div className="flex flex-col h-full">
+              <div className="flex items-center gap-3 mb-10">
+                <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-green-400 rounded-2xl flex items-center justify-center shadow-xl shadow-green-200/50">
+                  <Flame className="text-white w-7 h-7" />
+                </div>
+                <div>
+                  <h1 className="font-black text-xl tracking-tighter text-slate-900 leading-none">
+                    SANDUÍCHE<br /><span className="text-green-600">NATURAL</span>
+                  </h1>
+                  <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest mt-1">Área de Membros</p>
+                </div>
+              </div>
 
-        <nav className="space-y-2 flex-1">
-          <NavButton 
-            active={activeScreen === 'lessons'} 
-            onClick={() => setActiveScreen('lessons')}
-            icon={<PlayCircle className="w-5 h-5" />}
-            label="Aulas"
-          />
-          <NavButton 
-            active={activeScreen === 'pdfs'} 
-            onClick={() => setActiveScreen('pdfs')}
-            icon={<FileText className="w-5 h-5" />}
-            label="Downloads"
-          />
-          <NavButton 
-            active={activeScreen === 'mentor'} 
-            onClick={() => setActiveScreen('mentor')}
-            icon={<MessageSquare className="w-5 h-5" />}
-            label="Agente Financeiro"
-          />
-        </nav>
+              {/* Progress Card */}
+              <div className="bg-slate-50 rounded-3xl p-5 mb-8 border border-slate-100 relative overflow-hidden group">
+                <div className="relative z-10">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Trophy className={cn("w-4 h-4 transition-colors", isCertified ? "text-yellow-500" : "text-slate-400")} />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Seu Progresso</span>
+                    </div>
+                    <span className="text-xs font-black text-green-600">{progressPercentage}%</span>
+                  </div>
+                  <div className="h-2 bg-slate-200 rounded-full overflow-hidden mb-3">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${progressPercentage}%` }}
+                      transition={{ duration: 1, ease: "circOut" }}
+                      className="h-full bg-gradient-to-r from-green-600 to-green-400"
+                    />
+                  </div>
+                  <p className="text-[9px] font-bold text-slate-400 leading-tight">
+                    {isCertified 
+                      ? "Parabéns! Você concluiu o treinamento e está pronto para lucrar." 
+                      : `Faltam ${5 - completedLessons.length} aulas para o seu certificado.`}
+                  </p>
+                </div>
+                <div className="absolute -right-4 -bottom-4 w-16 h-16 bg-green-500/5 rounded-full blur-2xl group-hover:bg-green-500/10 transition-colors" />
+              </div>
 
-        <div className="mt-auto p-4 bg-slate-50 rounded-2xl border border-slate-100">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center">
-              <User className="w-4 h-4 text-slate-500" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-bold truncate">{userData?.name || 'Aluno Tubarão'}</p>
-              <p className="text-[10px] text-slate-400">Meta: R$ {userData?.incomeGoal}</p>
-            </div>
-          </div>
-          <div className="space-y-3 pt-2 border-t border-slate-200">
-            <div className="flex justify-between items-center">
-              <span className="text-[10px] font-bold text-slate-400 uppercase">Chamados</span>
-              <span className="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded">0 Ativos</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-[10px] font-bold text-slate-400 uppercase">Resposta</span>
-              <span className="text-[10px] font-bold text-slate-600">~15 min</span>
-            </div>
-          </div>
-        </div>
-      </aside>
+              <nav className="space-y-2 flex-1">
+                <NavButton 
+                  active={activeScreen === 'lessons'} 
+                  onClick={() => setActiveScreen('lessons')}
+                  icon={<PlayCircleIcon className="w-5 h-5" />}
+                  label="Do Zero ao Lucro"
+                  subLabel="5 Aulas Estratégicas"
+                  badge={`${completedLessons.length}/5`}
+                />
+                <NavButton 
+                  active={activeScreen === 'pdfs'} 
+                  onClick={() => setActiveScreen('pdfs')}
+                  icon={<FileText className="w-5 h-5" />}
+                  label="Ferramentas Prontas"
+                  subLabel="5 PDFs de Operação"
+                  badge="Download"
+                />
+                <NavButton 
+                  active={activeScreen === 'mentor'} 
+                  onClick={() => setActiveScreen('mentor')}
+                  icon={<MessageSquare className="w-5 h-5" />}
+                  label="Consultor de Lucro"
+                  subLabel="Inteligência Artificial"
+                  badge="Online"
+                />
+              </nav>
 
-      {/* Main Content Area */}
-      <main className={cn(
-        "flex-1 min-h-screen transition-all duration-300",
-        "md:ml-64"
-      )}>
-        {/* Mobile Header */}
-        <header className="md:hidden bg-white p-4 border-b border-slate-100 flex items-center justify-between sticky top-0 z-40">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-              <Target className="text-white w-5 h-5" />
+              <div className="mt-auto pt-6 border-t border-slate-50">
+                <div className="flex items-center gap-3 p-2 rounded-2xl hover:bg-slate-50 transition-colors cursor-pointer group">
+                  <div className="w-10 h-10 bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl flex items-center justify-center text-slate-600 font-black text-sm shadow-sm group-hover:from-green-100 group-hover:to-green-50 group-hover:text-green-700 transition-all">
+                    {userData?.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-black text-slate-900 truncate">{userData?.name}</p>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest truncate">Meta: R$ {userData?.incomeGoal}</p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <h1 className="font-black text-sm tracking-tighter leading-none uppercase">
-              Sanduíche <span className="text-green-600">Natural</span>
-            </h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="text-right">
-               <p className="text-[10px] font-bold text-slate-900 leading-none">{userData?.name.split(' ')[0]}</p>
-               <p className="text-[8px] text-green-600 font-bold uppercase tracking-widest">Meta: {userData?.incomeGoal}</p>
+          </aside>
+
+          {/* MAIN CONTENT Area */}
+          <main className="min-h-screen md:ml-64">
+            {/* Mobile Header - FIXO NO TOPO */}
+            <header className="md:hidden sticky top-0 bg-white border-b border-slate-100 z-40 safe-top">
+              <div className="px-4 py-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-gradient-to-br from-green-600 to-green-500 rounded-lg flex items-center justify-center shadow-md">
+                      <Flame className="text-white w-4 h-4" />
+                    </div>
+                    <h1 className="font-black text-xs uppercase tracking-tight">
+                      Sanduíche <span className="text-green-600">Natural</span>
+                    </h1>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 bg-gradient-to-br from-slate-700 to-slate-600 rounded-full flex items-center justify-center text-white font-bold text-[10px]">
+                      {userData?.name.charAt(0).toUpperCase()}
+                    </div>
+                    {isCertified && (
+                      <div className="w-6 h-6 bg-yellow-100 rounded-full flex items-center justify-center">
+                        <Award className="w-3.5 h-3.5 text-yellow-600" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Progress Bar */}
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${progressPercentage}%` }}
+                      transition={{ duration: 1, ease: "circOut" }}
+                      className="h-full bg-gradient-to-r from-green-600 to-green-400"
+                    />
+                  </div>
+                  <span className="text-[10px] font-bold text-green-600 min-w-[32px]">
+                    {progressPercentage}%
+                  </span>
+                </div>
+              </div>
+            </header>
+
+            {/* CONTENT AREA - COM PADDING PARA BOTTOM NAV */}
+            <div className="pb-20 md:pb-0">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeScreen}
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {activeScreen === 'lessons' && (
+                    <LessonsScreen 
+                      completedLessons={completedLessons} 
+                      onComplete={handleLessonComplete} 
+                    />
+                  )}
+                  {activeScreen === 'pdfs' && <PDFsScreen />}
+                  {activeScreen === 'mentor' && <MentorChat userData={userData} />}
+                </motion.div>
+              </AnimatePresence>
             </div>
-          </div>
-        </header>
 
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeScreen}
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -10 }}
-            transition={{ duration: 0.2 }}
-            className="h-full"
-          >
-            {renderScreen()}
-          </motion.div>
-        </AnimatePresence>
-
-        {/* Mobile Bottom Nav */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-slate-100 flex justify-around p-3 pb-6 z-50">
-          <MobileNavButton 
-            active={activeScreen === 'lessons'} 
-            onClick={() => setActiveScreen('lessons')}
-            icon={<PlayCircle className="w-6 h-6" />}
-            label="Aulas"
-          />
-          <MobileNavButton 
-            active={activeScreen === 'pdfs'} 
-            onClick={() => setActiveScreen('pdfs')}
-            icon={<FileText className="w-6 h-6" />}
-            label="Downloads"
-          />
-          <MobileNavButton 
-            active={activeScreen === 'mentor'} 
-            onClick={() => setActiveScreen('mentor')}
-            icon={<MessageSquare className="w-6 h-6" />}
-            label="Financeiro"
-          />
-        </nav>
-      </main>
+            {/* Mobile Bottom Nav - FIXO, COM SAFE AREA */}
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-slate-200 z-50 safe-bottom">
+              <div className="flex justify-around items-center px-2 pt-2 pb-safe">
+                <MobileNavButton 
+                  active={activeScreen === 'lessons'} 
+                  onClick={() => setActiveScreen('lessons')}
+                  icon={<LayoutDashboard className="w-5 h-5" />}
+                  label="Aulas"
+                />
+                <MobileNavButton 
+                  active={activeScreen === 'pdfs'} 
+                  onClick={() => setActiveScreen('pdfs')}
+                  icon={<FileText className="w-5 h-5" />}
+                  label="PDFs"
+                />
+                <MobileNavButton 
+                  active={activeScreen === 'mentor'} 
+                  onClick={() => setActiveScreen('mentor')}
+                  icon={<MessageSquare className="w-5 h-5" />}
+                  label="IA"
+                />
+              </div>
+            </nav>
+          </main>
+        </>
+      )}
     </div>
   );
 }
 
-function NavButton({ active, onClick, icon, label }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string }) {
+function NavButton({ active, onClick, icon, label, subLabel, badge }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string, subLabel: string, badge?: string }) {
   return (
     <button
       onClick={onClick}
       className={cn(
-        "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
+        "w-full flex items-center justify-between px-4 py-4 rounded-2xl transition-all duration-300 group relative overflow-hidden",
         active 
-          ? "bg-green-600 text-white shadow-lg shadow-green-200" 
-          : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
+          ? "bg-slate-900 text-white shadow-xl shadow-slate-200" 
+          : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
       )}
     >
-      {icon}
-      <span className="font-bold text-sm tracking-tight">{label}</span>
+      <div className="flex items-center gap-4 relative z-10">
+        <div className={cn(
+          "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300",
+          active ? "bg-green-600 text-white" : "bg-slate-100 text-slate-400 group-hover:bg-white group-hover:text-green-600 group-hover:shadow-sm"
+        )}>
+          {icon}
+        </div>
+        <div className="text-left">
+          <p className="font-black text-sm tracking-tight leading-none mb-1">{label}</p>
+          <p className={cn(
+            "text-[10px] font-bold uppercase tracking-widest opacity-60",
+            active ? "text-green-400" : "text-slate-400"
+          )}>{subLabel}</p>
+        </div>
+      </div>
+      {badge && (
+        <div className="relative z-10">
+          <span className={cn(
+            "text-[9px] font-black px-2 py-0.5 rounded-lg uppercase tracking-tighter",
+            active ? "bg-green-600 text-white" : "bg-slate-100 text-slate-400 group-hover:bg-slate-200"
+          )}>
+            {badge}
+          </span>
+        </div>
+      )}
+      {active && (
+        <motion.div 
+          layoutId="activeNavBg"
+          className="absolute inset-0 bg-slate-900"
+          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+        />
+      )}
     </button>
   );
 }
@@ -185,18 +283,48 @@ function MobileNavButton({ active, onClick, icon, label }: { active: boolean, on
     <button
       onClick={onClick}
       className={cn(
-        "flex flex-col items-center gap-1 transition-all duration-200",
-        active ? "text-green-600 scale-110" : "text-slate-400"
+        "flex flex-col items-center gap-1.5 transition-all duration-300 relative py-1 flex-1",
+        active ? "text-green-600" : "text-slate-400"
       )}
     >
-      {icon}
-      <span className="text-[10px] font-bold uppercase tracking-widest">{label}</span>
-      {active && (
-        <motion.div 
-          layoutId="activeTab"
-          className="w-1 h-1 bg-green-600 rounded-full mt-1"
-        />
-      )}
+      <div className={cn(
+        "transition-all duration-300 relative",
+        active ? "scale-110 -translate-y-1" : "scale-100"
+      )}>
+        {icon}
+        {active && (
+          <motion.div 
+            layoutId="activeIndicator"
+            className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border-2 border-white"
+          />
+        )}
+      </div>
+      <span className={cn(
+        "text-[10px] font-black uppercase tracking-tighter transition-all duration-300",
+        active ? "opacity-100" : "opacity-60"
+      )}>
+        {label}
+      </span>
     </button>
+  );
+}
+
+function PlayCircleIcon(props: any) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <polygon points="10 8 16 12 10 16 10 8" fill="currentColor" />
+    </svg>
   );
 }

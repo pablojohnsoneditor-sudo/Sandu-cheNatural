@@ -33,9 +33,9 @@ export default function RegistrationScreen({ onComplete }: RegistrationScreenPro
             <Target className="text-white w-8 h-8" />
           </div>
           <h1 className="text-3xl font-black tracking-tighter text-slate-900 uppercase">
-            Sanduíche <span className="text-green-600">Natural</span>
+            SANDUÍCHE <span className="text-green-600">NATURAL</span>
           </h1>
-          <p className="text-slate-500 font-medium italic">Área de Membros Exclusiva</p>
+          <p className="text-slate-500 font-medium italic">Área de Membros Estratégica</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
@@ -94,7 +94,7 @@ export default function RegistrationScreen({ onComplete }: RegistrationScreenPro
         </form>
 
         <p className="text-center text-[10px] text-slate-400 uppercase tracking-widest font-bold">
-          Foco no Lucro • 100% Mobile
+          Sanduíche Natural • Foco no Lucro
         </p>
       </motion.div>
     </div>

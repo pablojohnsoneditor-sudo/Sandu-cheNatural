@@ -4,7 +4,7 @@ export interface Lesson {
   description: string;
   duration: string;
   thumbnail: string;
-  category: 'Produção' | 'Vendas' | 'Gestão';
+  category: string;
 }
 
 export interface PDFResource {
@@ -12,10 +12,9 @@ export interface PDFResource {
   title: string;
   description: string;
   icon: string;
-  category: 'Copy' | 'Tráfego' | 'Custos' | 'Etiquetas' | 'Produção';
+  category: string;
+  downloadUrl?: string;
 }
-
-export type AgentType = 'mentor' | 'finance';
 
 export interface UserData {
   name: string;
@@ -27,3 +26,5 @@ export interface Message {
   role: 'user' | 'model';
   content: string;
 }
+
+export type AgentType = 'finance';

@@ -8,6 +8,49 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+  
+  /* Safe areas for iPhone */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .pb-safe {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+}
+
+/* Scroll suave */
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Prevenir zoom em inputs (iOS) */
+input, textarea, select {
+  font-size: 16px !important;
+}
+
+/* Touch feedback */
+button, a {
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Melhor scroll em mobile */
+body {
+  overflow-x: hidden;
+  overscroll-behavior-y: none;
+}
+
+/* Prevenir text selection indesejado */
+.touch-none {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .prose pre {
